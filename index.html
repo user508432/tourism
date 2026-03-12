@@ -219,7 +219,7 @@
     <section id="booking">
         <div class="container">
             <h2>Book Your Tour</h2>
-            <form action="#" method="post">
+            <form id="tourBookingForm" action="#" method="post" novalidate>
                 <label for="name">Full Name:</label>
                 <input type="text" id="name" name="name" required placeholder="Enter your name">
 
@@ -259,17 +259,155 @@
                 <label for="message">Special Requests:</label>
                 <textarea id="message" name="message" rows="4" placeholder="Any special requirements..."></textarea>
 
-                <button type="submit">Book Now</button>
+                <button type="submit" id="bookNowBtn">Book Now</button>
             </form>
         </div>
     </section>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-box">
+            <div class="modal-icon">✓</div>
+            <h2 id="modalTitle">Booking Confirmed!</h2>
+            <p class="modal-subtitle">Thank you for choosing Incredible India Tourism</p>
+            <div class="modal-details" id="modalDetails"></div>
+            <p class="modal-note">A confirmation email will be sent to your registered email address shortly. Our team will contact you within 24 hours.</p>
+            <button class="modal-close-btn" id="modalCloseBtn" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Generate a random booking reference
+        function generateBookingRef() {
+            return 'IND-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-' + Date.now().toString().slice(-4);
+        }
+
+        // Destination display names
+        const destinationNames = {
+            agra: 'Taj Mahal, Agra',
+            jaipur: 'Jaipur - Pink City',
+            kerala: 'Kerala Backwaters',
+            goa: 'Goa Beaches',
+            ladakh: 'Ladakh',
+            varanasi: 'Varanasi'
+        };
+
+        // Format date nicely
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const [year, month, day] = dateStr.split('-');
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            return `${day} ${months[parseInt(month, 10) - 1]} ${year}`;
+        }
+
+        // Validate phone: exactly 10 digits
+        function isValidPhone(phone) {
+            return /^[0-9]{10}$/.test(phone.trim());
+        }
+
+        // Validate travel date is in the future
+        function isFutureDate(dateStr) {
+            if (!dateStr) return false;
+            return new Date(dateStr) > new Date();
+        }
+
+        // Show inline error
+        function showError(inputEl, message) {
+            inputEl.classList.add('input-error');
+            let err = inputEl.parentNode.querySelector('.field-error');
+            if (!err) {
+                err = document.createElement('span');
+                err.className = 'field-error';
+                inputEl.parentNode.insertBefore(err, inputEl.nextSibling);
+            }
+            err.textContent = message;
+        }
+
+        // Clear all errors
+        function clearErrors() {
+            document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+            document.querySelectorAll('.field-error').forEach(el => el.remove());
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('confirmationModal').classList.remove('modal-visible');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal on overlay click
+        document.getElementById('confirmationModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // Form submission
+        document.getElementById('tourBookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            clearErrors();
+
+            const name        = document.getElementById('name');
+            const email       = document.getElementById('email');
+            const phone       = document.getElementById('phone');
+            const destination = document.getElementById('destination');
+            const date        = document.getElementById('date');
+            const people      = document.getElementById('people');
+            const duration    = document.getElementById('duration');
+
+            let valid = true;
+
+            if (!name.value.trim()) {
+                showError(name, 'Please enter your full name.');
+                valid = false;
+            }
+            if (!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+                showError(email, 'Please enter a valid email address.');
+                valid = false;
+            }
+            if (!isValidPhone(phone.value)) {
+                showError(phone, 'Please enter a valid 10-digit phone number.');
+                valid = false;
+            }
+            if (!destination.value) {
+                showError(destination, 'Please select a destination.');
+                valid = false;
+            }
+            if (!date.value || !isFutureDate(date.value)) {
+                showError(date, 'Please select a future travel date.');
+                valid = false;
+            }
+            if (!people.value || parseInt(people.value) < 1) {
+                showError(people, 'Please enter at least 1 person.');
+                valid = false;
+            }
+            if (!duration.value) {
+                showError(duration, 'Please select a tour duration.');
+                valid = false;
+            }
+
+            if (!valid) return;
+
+            // Build modal content
+            const bookingRef = generateBookingRef();
+            document.getElementById('modalDetails').innerHTML = `
+                <div class="detail-row"><span class="detail-label">Booking Ref</span><span class="detail-value booking-ref">${bookingRef}</span></div>
+                <div class="detail-row"><span class="detail-label">Name</span><span class="detail-value">${name.value.trim()}</span></div>
+                <div class="detail-row"><span class="detail-label">Destination</span><span class="detail-value">${destinationNames[destination.value]}</span></div>
+                <div class="detail-row"><span class="detail-label">Travel Date</span><span class="detail-value">${formatDate(date.value)}</span></div>
+                <div class="detail-row"><span class="detail-label">Travellers</span><span class="detail-value">${people.value} ${parseInt(people.value) === 1 ? 'Person' : 'People'}</span></div>
+                <div class="detail-row"><span class="detail-label">Duration</span><span class="detail-value">${duration.value} Days</span></div>
+            `;
+
+            // Show modal
+            document.getElementById('confirmationModal').classList.add('modal-visible');
+            document.body.style.overflow = 'hidden';
+
+            // Reset form
+            this.reset();
+        });
+    </script>
 
     <!-- Footer -->
     <footer>
         <div class="container">
             <p>&copy; 2024 Incredible India Tourism. All rights reserved.</p>
-            <p>Contact: info@incredibleindia.com | +91 1234567890</p>
-        </div>
-    </footer>
-</body>
-</html>
+            <p>Contact: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0f666169604f66616c
